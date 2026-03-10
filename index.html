@@ -1,0 +1,1549 @@
+ <!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOG Network</title>
+    <!-- Favicon -->
+    <link rel="icon" id="favicon" type="image/png" href="img/logo.png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+
+
+
+    <style>
+        /* Base styles - Enforcing Dark Mode */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Custom background image styling */
+        #bg-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.3s ease-in-out;
+            /* Ensure the image is slightly dimmed for text readability */
+            filter: brightness(0.7);
+        }
+        /* Style for admin-only fields */
+        .admin-only {
+            background-color: #453310; /* Dark yellow/brown */
+            color: #fef08a; /* Pale yellow text */
+            border-left: 4px solid #fcd34d; /* Amber border */
+            padding: 2px 6px;
+            font-size: 0.875rem;
+            border-radius: 4px;
+        }
+        /* Simple modal transition */
+        .modal {
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .modal-content {
+            transition: transform 0.25s ease;
+        }
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.hidden .modal-content {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<!-- Default body is set to dark mode colors -->
+<body class="bg-gray-950 text-gray-100">
+
+    <!-- SVG Icons Sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </symbol>
+        <symbol id="icon-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+        </symbol>
+        <symbol id="icon-payment" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+        </symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </symbol>
+        <symbol id="icon-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+        </symbol>
+        <symbol id="icon-whatsapp" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.06 21.94L7.32 20.59C8.77 21.38 10.37 21.8 12.04 21.8H12.05C17.5 21.8 21.95 17.35 21.95 11.91C21.95 9.27 20.92 6.84 19.13 4.97C17.36 3.16 14.89 2.04 12.04 2.04ZM17.96 15.82C17.71 16.48 16.96 16.96 16.32 17.02C15.82 17.06 15.2 16.95 13.89 16.41C12.18 15.69 10.82 14.7 9.8 13.57C9.28 12.98 8.87 12.29 8.53 11.53C8.18 10.77 8.02 10.1 8.02 9.47C8.02 8.84 8.24 8.28 8.61 7.89C8.76 7.73 8.94 7.59 9.15 7.59C9.33 7.59 9.49 7.59 9.64 7.6C9.83 7.6 9.98 7.61 10.12 7.61C10.3 7.61 10.45 7.63 10.6 8.04C10.76 8.45 11.23 9.78 11.3 9.93C11.38 10.08 11.43 10.26 11.34 10.45C11.24 10.64 11.16 10.76 11.04 10.9C10.92 11.04 10.8 11.16 10.67 11.27C10.55 11.38 10.41 11.52 10.53 11.75C10.66 11.98 11.13 12.8 11.89 13.48C12.82 14.3 13.62 14.63 13.88 14.78C14.13 14.92 14.33 14.9 14.51 14.71C14.72 14.5 14.93 14.21 15.15 13.94C15.3 13.76 15.5 13.7 15.7 13.8C15.9 13.9 16.92 14.41 17.16 14.53C17.41 14.64 17.58 14.71 17.66 14.79C17.74 14.87 17.74 15.06 17.68 15.24C17.62 15.42 17.62 15.42 17.62 15.5C17.62 15.59 17.64 15.68 17.96 15.82Z"></path>
+        </symbol>
+    </svg>
+
+    <!-- Background Image Container -->
+    <div id="bg-image-container"></div>
+
+    <!-- ================================================================= -->
+    <!-- USER VIEW -->
+    <!-- ================================================================= -->
+    <div id="user-view" class="relative min-h-screen">
+        <!-- Header: bg-gray-900/80 for dark semi-transparency -->
+        <header class="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-md shadow-sm">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Logo and Site Name -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <img id="user-logo" class="h-10 w-auto" src="https://placehold.co/150x50/000000/FFFFFF?text=HOG+Network" alt="Site Logo">
+                        <span id="user-site-name" class="ml-3 text-2xl font-bold text-white">HOG Network</span>
+                    </div>
+                    <!-- Admin Login Button (Top Right) -->
+                    <div class="flex items-center space-x-4">
+                        <button id="admin-login-btn" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-colors duration-200">
+                            <svg class="h-5 w-5 mr-2"><use href="#icon-lock"></use></svg>
+                            Admin Login
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Admin Notification -->
+            <div id="user-notification-container" class="mb-8" style="display: none;">
+                <!-- Adjusted for dark mode colors -->
+                <div class="bg-blue-900/50 border-l-4 border-blue-500 text-blue-300 p-4 rounded-lg shadow-md" role="alert">
+                    <div class="flex items-center">
+                        <svg class="h-6 w-6 mr-3"><use href="#icon-bell"></use></svg>
+                        <p class="font-bold">Admin Notification</p>
+                    </div>
+                    <p id="user-notification-text" class="mt-2"></p>
+                </div>
+            </div>
+
+            <!-- Data Plans -->
+            <h1 class="text-3xl font-extrabold text-center mb-10 text-white">Our Data Plans</h1>
+            <div id="data-plans-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Data plans will be injected here by JavaScript -->
+            </div>
+
+            <!-- Voucher retrieval section -->
+            <div class="max-w-4xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 py-8 bg-gray-800 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-white mb-4 text-center">Retrieve Your Voucher</h2>
+                <form id="voucher-retrieve-form" class="space-y-4 max-w-md mx-auto">
+                    <div>
+                        <label for="retrieve-phone" class="block text-sm font-medium text-gray-300">Phone Number</label>
+                        <input type="text" id="retrieve-phone" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white">
+                    </div>
+                    <div>
+                        <label for="retrieve-plan" class="block text-sm font-medium text-gray-300">Data Plan</label>
+                        <select id="retrieve-plan" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white">
+                            <!-- options injected in JS -->
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-md">Get Voucher</button>
+                </form>
+                <p id="retrieve-result" class="mt-4 text-center text-lg text-yellow-400"></p>
+            </div>
+        </main>
+
+        <!-- Footer: bg-gray-900/80 for dark semi-transparency -->
+        <footer class="bg-gray-900/80 backdrop-blur-md mt-12 py-6 shadow-inner-top">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <a id="whatsapp-link" href="#" target="_blank" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-lg">
+                    <svg class="h-6 w-6 mr-3"><use href="#icon-whatsapp"></use></svg>
+                    Contact Admin on WhatsApp
+                </a>
+                <p class="mt-4 text-sm text-gray-400">
+                    After payment, please send your proof of payment to the admin on WhatsApp to receive your voucher code.
+                </p>
+                <p id="admin-login-trigger" class="mt-4 text-xs text-gray-500 cursor-pointer hover:text-gray-300">
+                    &copy; <span id="footer-year">2025</span> <span id="footer-site-name">HOG Network</span>. All rights reserved.
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- ADMIN LOGIN VIEW -->
+    <!-- ================================================================= -->
+    <div id="admin-login-view" class="hidden min-h-screen flex items-center justify-center bg-gray-950 z-50" style="background-size: cover; background-position: center; background-repeat: no-repeat;">
+        <!-- card container flex switches depending on screen size -->
+        <div class="w-full max-w-md bg-gray-800 shadow-2xl rounded-2xl p-8 m-4 flex flex-col md:flex-row md:items-center md:space-x-6">
+            <!-- logo section (mobile: top, desktop: left) -->
+            <div class="flex justify-center mb-6 md:mb-0">
+                <img id="admin-logo" class="h-12 w-auto" src="https://placehold.co/150x50/000000/FFFFFF?text=HOG+Network" alt="Site Logo">
+            </div>
+
+            <!-- form section -->
+            <div class="flex-1">
+                <h2 class="text-3xl font-bold text-center text-white mb-6 md:text-left">Admin Login</h2>
+                <form id="admin-login-form" class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-300">Username</label>
+                        <!-- Updated inputs for dark mode -->
+                        <input type="text" id="username" name="username" required class="mt-1 block w-full px-4 py-3 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-300">Password</label>
+                        <!-- Updated inputs for dark mode -->
+                        <input type="password" id="password" name="password" required class="mt-1 block w-full px-4 py-3 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                    </div>
+                    <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Invalid username or password.</p>
+                    <button type="submit" class="w-full mt-6 py-3 px-4 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg">
+                        Log In
+                    </button>
+                    <button type="button" id="back-to-user-view" class="w-full mt-3 py-3 px-4 border border-gray-600 text-base font-medium rounded-lg text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Back to Site
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- ADMIN DASHBOARD VIEW -->
+    <!-- ================================================================= -->
+    <div id="admin-dashboard-view" class="hidden">
+        <div class="flex min-h-screen">
+            <!-- Sidebar -->
+            <nav class="w-64 bg-gray-800 shadow-lg p-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center mb-8">
+                        <img id="admin-dash-logo" class="h-10 w-auto" src="https://placehold.co/150x50/000000/FFFFFF?text=HOG+Network" alt="Site Logo">
+                        <span id="admin-dash-site-name" class="ml-3 text-xl font-bold text-white">Admin Panel</span>
+                    </div>
+                    <!-- Nav Links -->
+                    <ul class="space-y-2">
+                        <!-- Navigation links updated for dark mode -->
+                        <li><a href="#settings" class="admin-nav-link flex items-center px-4 py-3 text-gray-300 bg-gray-700 rounded-lg font-medium">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-settings"></use></svg>General Settings
+                        </a></li>
+                        <li><a href="#plans" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-wifi"></use></svg>Data Plans
+                        </a></li>
+                        <li><a href="#payment" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-payment"></use></svg>Payment Settings
+                        </a></li>
+                        <li><a href="#approvals" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-lock"></use></svg>Payment Approvals
+                        </a></li>
+                        <li><a href="#notifications" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-bell"></use></svg>Notifications
+                        </a></li>
+                        <li><a href="#vouchers" id="nav-vouchers" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-wifi"></use></svg>Voucher Codes
+                        </a></li>
+                        <li><a href="#security" class="admin-nav-link flex items-center px-4 py-3 text-gray-400 hover:bg-gray-700 rounded-lg">
+                            <svg class="h-5 w-5 mr-3"><use href="#icon-lock"></use></svg>Security
+                        </a></li>
+                    </ul>
+                </div>
+                <!-- Logout -->
+                <div class="space-y-4">
+                    <button id="admin-logout-btn" class="w-full flex items-center justify-center px-4 py-3 text-base font-medium rounded-lg text-red-400 bg-red-900/50 hover:bg-red-800/60">
+                        <svg class="h-5 w-5 mr-3"><use href="#icon-logout"></use></svg>
+                        Logout
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 p-8 bg-gray-950 overflow-y-auto">
+                <h1 class="text-3xl font-bold text-white mb-6" id="admin-tab-title">General Settings</h1>
+                <div id="admin-toast" class="hidden fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+                    Settings saved successfully!
+                </div>
+
+                <!-- Admin Tab: General Settings -->
+                <div id="settings-tab" class="admin-tab-content space-y-8">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Site Identity</h2>
+                        <form id="settings-form" class="space-y-4">
+                            <div>
+                                <label for="site-name" class="block text-sm font-medium text-gray-300">Website Name</label>
+                                <input type="text" id="site-name" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white" placeholder="e.g., HOG Network">
+                            </div>
+                            <div>
+                                <label for="logo-upload" class="block text-sm font-medium text-gray-300">Upload Logo</label>
+                                <input type="file" id="logo-upload" accept="image/*" class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-900/50 file:text-blue-300 hover:file:bg-blue-800/60">
+                                <img id="logo-preview" class="mt-3 h-12 w-auto bg-gray-700 p-1 rounded" src="#" alt="Logo Preview" style="display: none;">
+                            </div>
+                            <div>
+                                <label for="bg-upload" class="block text-sm font-medium text-gray-300">Upload Background Image</label>
+                                <input type="file" id="bg-upload" accept="image/*" class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-900/50 file:text-blue-300 hover:file:bg-blue-800/60">
+                                <img id="bg-preview" class="mt-3 h-24 w-auto bg-gray-700 p-1 rounded" src="#" alt="Background Preview" style="display: none;">
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Data Plans -->
+                <div id="plans-tab" class="admin-tab-content hidden space-y-8">
+                    <!-- Add/Edit Plan Form -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white" id="plan-form-title">Add New Data Plan</h2>
+                        <form id="plan-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <input type="hidden" id="plan-index">
+                            <div>
+                                <label for="plan-data" class="block text-sm font-medium text-gray-300">Data Amount (e.g., 1GB)</label>
+                                <input type="text" id="plan-data" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="plan-price" class="block text-sm font-medium text-gray-300">Price (e.g., 320)</label>
+                                <input type="number" id="plan-price" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="plan-validity" class="block text-sm font-medium text-gray-300">Validity (e.g., 24Hours)</label>
+                                <input type="text" id="plan-validity" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="plan-devices" class="block text-sm font-medium text-gray-300">Devices (e.g., 1)</label>
+                                <input type="number" id="plan-devices" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="plan-payment-link" class="block text-sm font-medium text-gray-300">Paystack Link</label>
+                                <input type="url" id="plan-payment-link" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <!-- Admin-Only Fields -->
+                            <div class="md:col-span-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+                                <h3 class="text-lg font-medium text-gray-200 mb-3">Admin-Only Speed Settings</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="plan-upload" class="block text-sm font-medium text-gray-300">Upload Speed (Mbps)</label>
+                                        <input type="number" id="plan-upload" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                                    </div>
+                                    <div>
+                                        <label for="plan-download" class="block text-sm font-medium text-gray-300">Download Speed (Mbps)</label>
+                                        <input type="number" id="plan-download" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center space-x-4">
+                                <button type="submit" id="save-plan-btn" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Save Plan</button>
+                                <button type="button" id="clear-plan-form-btn" class="px-5 py-2 border border-gray-600 text-base font-medium rounded-lg text-gray-300 bg-gray-700 hover:bg-gray-600">Clear Form</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Current Plans List -->
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Current Data Plans</h2>
+                        <div id="admin-plans-list" class="space-y-4">
+                            <!-- Admin plan list injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Payment Settings -->
+                <div id="payment-tab" class="admin-tab-content hidden space-y-8">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Admin Contact</h2>
+                        <form id="contact-form" class="space-y-4">
+                            <div>
+                                <label for="whatsapp-number" class="block text-sm font-medium text-gray-300">Admin WhatsApp Number</label>
+                                <input type="text" id="whatsapp-number" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white" placeholder="+2349120461800">
+                                <p class="mt-1 text-xs text-gray-400">Include country code (e.g., +234)</p>
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Save Contact Info</button>
+                        </form>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Manual Payment Details</h2>
+                        <form id="manual-payment-form" class="space-y-4">
+                            <div>
+                                <label for="bank-name" class="block text-sm font-medium text-gray-300">Bank Name</label>
+                                <input type="text" id="bank-name" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="account-number" class="block text-sm font-medium text-gray-300">Account Number</label>
+                                <input type="text" id="account-number" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="account-name" class="block text-sm font-medium text-gray-300">Account Name</label>
+                                <input type="text" id="account-name" class="mt-1 block w-full md:w-1/2 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Save Manual Details</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Payment Approvals -->
+                <div id="approvals-tab" class="admin-tab-content hidden">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Manual Payment Approvals</h2>
+                        <p class="text-gray-300 mb-6">Review and approve manual bank transfer payments from users.</p>
+                        <div id="pending-payments-list" class="space-y-4">
+                            <!-- Pending payments will be injected here -->
+                            <p class="text-gray-400">No pending payments at this time.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Notifications -->
+                <div id="notifications-tab" class="admin-tab-content hidden">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Send Notification to Users</h2>
+                        <form id="notification-form" class="space-y-4">
+                            <div>
+                                <label for="notification-message" class="block text-sm font-medium text-gray-300">Message</label>
+                                <textarea id="notification-message" rows="4" class="mt-1 block w-full md:w-3/4 px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white" placeholder="Enter a short message for all users..."></textarea>
+                                <p class="mt-1 text-xs text-gray-400">This message will appear at the top of the user page. Leave blank to hide.</p>
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Send/Update Notification</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Vouchers -->
+                <div id="vouchers-tab" class="admin-tab-content hidden">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Manage Voucher Codes</h2>
+                        <p class="text-sm text-gray-400 mb-3">Enter one voucher code per line and select the associated data plan.</p>
+                        <form id="voucher-form" class="space-y-4">
+                            <div>
+                                <label for="voucher-plan" class="block text-sm font-medium text-gray-300">Data Plan</label>
+                                <select id="voucher-plan" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white">
+                                    <!-- options injected by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label for="voucher-codes" class="block text-sm font-medium text-gray-300">Voucher Codes</label>
+                                <textarea id="voucher-codes" rows="6" class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white" placeholder="code1\ncode2\ncode3"></textarea>
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md">Add Vouchers</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Admin Tab: Security -->
+                <div id="security-tab" class="admin-tab-content hidden">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+                        <h2 class="text-xl font-semibold mb-4 text-white">Change Admin Credentials</h2>
+                        <form id="security-form" class="space-y-4 md:w-1/2">
+                            <div>
+                                <label for="new-username" class="block text-sm font-medium text-gray-300">New Username</label>
+                                <input type="text" id="new-username" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <div>
+                                <label for="new-password" class="block text-sm font-medium text-gray-300">New Password</label>
+                                <input type="password" id="new-password" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                            </div>
+                            <button type="submit" class="px-5 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-md">Update Credentials</button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- ================================================================= -->
+    <!-- PAYMENT MODAL -->
+    <!-- ================================================================= -->
+    <div id="payment-modal" class="modal hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70 backdrop-blur-sm">
+        <!-- Modal content adjusted for dark mode -->
+        <div class="modal-content bg-gray-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-200">
+                <svg class="h-6 w-6"><use href="#icon-x"></use></svg>
+            </button>
+
+            <h2 class="text-2xl font-bold text-white mb-4">Complete Your Payment</h2>
+            
+            <!-- Plan Details -->
+            <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                <h3 class="text-lg font-semibold text-white" id="modal-plan-data"></h3>
+                <p class="text-3xl font-bold text-blue-400" id="modal-plan-price"></p>
+                <p class="text-sm text-gray-300" id="modal-plan-validity"></p>
+            </div>
+
+            <p class="text-sm text-gray-300 mb-4">
+                Choose your payment method. After payment, please send a screenshot of your receipt to the admin on WhatsApp to get your voucher code.
+            </p>
+
+            <div class="space-y-4">
+                <!-- Paystack -->
+                <a id="paystack-link" href="#" target="_blank" class="w-full flex items-center justify-center px-6 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-lg">
+                    Pay with Paystack
+                </a>
+                
+                <!-- Manual Payment -->
+                <button id="manual-payment-btn" class="w-full flex items-center justify-center px-6 py-4 border border-gray-600 text-lg font-medium rounded-lg text-gray-200 bg-gray-700 hover:bg-gray-600 shadow-md">
+                    Manual Bank Transfer
+                </button>
+
+                <!-- Manual Payment Details (Hidden by default) -->
+                <div id="manual-payment-details" class="hidden bg-gray-900/50 p-4 rounded-lg border border-gray-700 space-y-3">
+                    <h4 class="font-semibold text-gray-200">Bank Details:</h4>
+                    <p class="text-gray-300"><strong>Bank:</strong> <span id="manual-bank-name"></span></p>
+                    <p class="text-gray-300"><strong>Account Number:</strong> <span id="manual-account-number"></span></p>
+                    <p class="text-gray-300"><strong>Account Name:</strong> <span id="manual-account-name"></span></p>
+                    
+                    <!-- Manual Payment Submission Form -->
+                    <form id="manual-payment-submit-form" class="mt-4 space-y-3 border-t border-gray-700 pt-4">
+                        <div>
+                            <label for="payment-phone-number" class="block text-sm font-medium text-gray-300">Your Phone Number</label>
+                            <input type="text" id="payment-phone-number" placeholder="e.g., +2349120461800" required class="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white">
+                        </div>
+                        <p class="text-sm font-medium text-yellow-400 mt-2">
+                            After making the payment, click "Submit Payment" and admin will verify and approve it.
+                        </p>
+                        <button type="submit" class="w-full px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-lg">
+                            Submit Payment Proof
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ================================================================= -->
+    <script type="module">
+        import { doc, setDoc, getDoc, collection, getDocs, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+        import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
+
+        // --- DEFAULT STATE ---
+        const defaultState = {
+            siteName: "HOG Network",
+            // use relative paths (no leading slash) so GitHub Pages subdirectory deploy works
+            logoDataUrl: "img/logo.png",
+            bgDataUrl: "img/hog-background.jpg",
+            whatsAppNumber: "+2349120461800",
+            adminCredentials: {
+                username: "admin",
+                password: "admin123" 
+            },
+            vouchers: [],
+            issuedVouchers: [], // {phoneNumber, plan, code, timestamp}
+            dataPlans: [
+                {
+                    data: "1GB",
+                    price: 320,
+                    validity: "24Hours",
+                    devices: 1,
+                    upload: 5,
+                    download: 8,
+                    paymentLink: "https://paystack.shop/pay/asyhox1k9b"
+                },
+                {
+                    data: "12GB",
+                    price: 3400,
+                    validity: "12Days",
+                    devices: 1,
+                    upload: 5,
+                    download: 8,
+                    paymentLink: "https://paystack.shop/pay/wl5obvswf8"
+                },
+                {
+                    data: "20GB",
+                    price: 5500,
+                    validity: "30Days",
+                    devices: 1,
+                    upload: 5,
+                    download: 8,
+                    paymentLink: "https://paystack.shop/pay/2w6t3iv586"
+                }
+            ],
+            manualPayment: {
+                bankName: "OPAY BANK",
+                accountNumber: "6142233479",
+                accountName: "KIZZY COMMUNICATION LINK"
+            },
+            notifications: "Welcome to HOG Network! Please contact admin on WhatsApp after payment for your voucher code.",
+            pendingPayments: []
+        };
+
+        // --- APPLICATION STATE ---
+        let appState;
+        let db, auth;
+
+        // --- DOM ELEMENTS ---
+        const $ = (selector) => document.getElementById(selector);
+
+        // Views
+        const userView = $('user-view');
+        const adminLoginView = $('admin-login-view');
+        const adminDashboardView = $('admin-dashboard-view');
+
+        // Modals
+        const paymentModal = $('payment-modal');
+        const closeModalBtn = $('close-modal-btn');
+        const manualPaymentBtn = $('manual-payment-btn');
+        const manualPaymentDetails = $('manual-payment-details');
+        const manualPaymentSubmitForm = $('manual-payment-submit-form');
+        const paymentPhoneNumberInput = $('payment-phone-number');
+        let currentPaymentPlan = null;
+        
+        // Admin Login
+        const adminLoginTrigger = $('admin-login-trigger');
+        const adminLoginBtn = $('admin-login-btn');
+        const adminLoginForm = $('admin-login-form');
+        const loginError = $('login-error');
+        const backToUserViewBtn = $('back-to-user-view');
+
+        // Admin Dashboard
+        const adminLogoutBtn = $('admin-logout-btn');
+        const adminNavLinks = document.querySelectorAll('.admin-nav-link');
+        const adminTabContents = document.querySelectorAll('.admin-tab-content');
+        const adminTabTitle = $('admin-tab-title');
+        const adminToast = $('admin-toast');
+
+        // Admin Settings
+        const settingsForm = $('settings-form');
+        const siteNameInput = $('site-name');
+        const logoUpload = $('logo-upload');
+        const bgUpload = $('bg-upload');
+        const logoPreview = $('logo-preview');
+        const bgPreview = $('bg-preview');
+
+        // Admin Plans
+        const planForm = $('plan-form');
+        const planFormTitle = $('plan-form-title');
+        const savePlanBtn = $('save-plan-btn');
+        const clearPlanFormBtn = $('clear-plan-form-btn');
+        const adminPlansList = $('admin-plans-list');
+        const planIndexInput = $('plan-index');
+        const planDataInput = $('plan-data');
+        const planPriceInput = $('plan-price');
+        const planValidityInput = $('plan-validity');
+        const planDevicesInput = $('plan-devices');
+        const planPaymentLinkInput = $('plan-payment-link');
+        const planUploadInput = $('plan-upload');
+        const planDownloadInput = $('plan-download');
+
+        // Admin Payment
+        const contactForm = $('contact-form');
+        const whatsappNumberInput = $('whatsapp-number');
+        const manualPaymentForm = $('manual-payment-form');
+        const bankNameInput = $('bank-name');
+        const accountNumberInput = $('account-number');
+        const accountNameInput = $('account-name');
+
+        // Admin Notifications
+        const notificationForm = $('notification-form');
+        const notificationMessageInput = $('notification-message');
+
+        // Admin Payment Approvals
+        const pendingPaymentsList = $('pending-payments-list');
+
+        // Admin Security
+        const securityForm = $('security-form');
+        const newUsernameInput = $('new-username');
+        const newPasswordInput = $('new-password');
+
+        // --- FIRESTORE OPERATIONS ---
+        
+        // Initialize Firestore
+        async function initFirestore() {
+            try {
+                db = window.db;
+                auth = window.auth;
+                await loadStateFromFirestore();
+            } catch (error) {
+                console.error("Firestore initialization error:", error);
+                showAdminToast("Warning: Database not configured. Using local storage.");
+                loadState();
+            }
+        }
+
+        async function loadStateFromFirestore() {
+            try {
+                // Load settings
+                const settingsDoc = await getDoc(doc(db, "config", "settings"));
+                const plansSnap = await getDocs(collection(db, "dataPlans"));
+                const paymentsSnap = await getDocs(collection(db, "pendingPayments"));
+                
+                appState = JSON.parse(JSON.stringify(defaultState));
+
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    appState.siteName = settings.siteName || appState.siteName;
+                    // strip leading slash if someone saved an absolute path earlier
+                    if (settings.logoDataUrl) {
+                        appState.logoDataUrl = settings.logoDataUrl.startsWith('/') ? settings.logoDataUrl.slice(1) : settings.logoDataUrl;
+                    }
+                    if (settings.bgDataUrl) {
+                        appState.bgDataUrl = settings.bgDataUrl.startsWith('/') ? settings.bgDataUrl.slice(1) : settings.bgDataUrl;
+                    }
+                    appState.whatsAppNumber = settings.whatsAppNumber || appState.whatsAppNumber;
+                    appState.notifications = settings.notifications || appState.notifications;
+                    if (settings.issuedVouchers) {
+                        appState.issuedVouchers = settings.issuedVouchers;
+                    }
+                }
+
+                // Load manual payment details
+                const manualPaymentDoc = await getDoc(doc(db, "config", "manualPayment"));
+                if (manualPaymentDoc.exists()) {
+                    appState.manualPayment = manualPaymentDoc.data();
+                }
+
+                // load vouchers from a dedicated config doc or settings
+                const vouchersDoc = await getDoc(doc(db, "config", "vouchers"));
+                if (vouchersDoc.exists()) {
+                    appState.vouchers = vouchersDoc.data().list || [];
+                }
+
+                // Load admin credentials
+                const adminCredentialsDoc = await getDoc(doc(db, "config", "adminCredentials"));
+                if (adminCredentialsDoc.exists()) {
+                    appState.adminCredentials = adminCredentialsDoc.data();
+                }
+
+                // Load data plans
+                appState.dataPlans = [];
+                plansSnap.forEach(doc => {
+                    appState.dataPlans.push(doc.data());
+                });
+
+                // Load pending payments
+                appState.pendingPayments = [];
+                paymentsSnap.forEach(doc => {
+                    appState.pendingPayments.push({ id: doc.id, ...doc.data() });
+                });
+
+                console.log("State loaded from Firestore:", appState);
+            } catch (error) {
+                console.error("Error loading state from Firestore:", error);
+                throw error;
+            }
+        }
+
+        async function saveSettingsToFirestore() {
+            try {
+                await setDoc(doc(db, "config", "settings"), {
+                    siteName: appState.siteName,
+                    logoDataUrl: appState.logoDataUrl,
+                    bgDataUrl: appState.bgDataUrl,
+                    whatsAppNumber: appState.whatsAppNumber,
+                    notifications: appState.notifications,
+                    vouchers: appState.vouchers || [],
+                    issuedVouchers: appState.issuedVouchers || [],
+                    updatedAt: new Date()
+                });
+                console.log("Settings saved to Firestore");
+            } catch (error) {
+                console.error("Error saving settings:", error);
+                throw error;
+            }
+        }
+
+        async function savePlanToFirestore(plan, index = null) {
+            try {
+                if (index !== null && index !== '' && appState.dataPlans[index]) {
+                    // Update existing plan
+                    const planDoc = doc(db, "dataPlans", appState.dataPlans[index].id || `plan_${index}`);
+                    await setDoc(planDoc, { ...plan, id: planDoc.id }, { merge: true });
+                } else {
+                    // Add new plan
+                    const newPlan = { ...plan, id: `plan_${Date.now()}` };
+                    await setDoc(doc(db, "dataPlans", newPlan.id), newPlan);
+                }
+                console.log("Plan saved to Firestore");
+            } catch (error) {
+                console.error("Error saving plan:", error);
+                throw error;
+            }
+        }
+
+        async function deletePlanFromFirestore(index) {
+            try {
+                const plan = appState.dataPlans[index];
+                if (plan && plan.id) {
+                    await deleteDoc(doc(db, "dataPlans", plan.id));
+                    console.log("Plan deleted from Firestore");
+                }
+            } catch (error) {
+                console.error("Error deleting plan:", error);
+                throw error;
+            }
+        }
+
+        async function saveManualPaymentToFirestore() {
+            try {
+                await setDoc(doc(db, "config", "manualPayment"), appState.manualPayment);
+                console.log("Manual payment details saved to Firestore");
+            } catch (error) {
+                console.error("Error saving manual payment:", error);
+                throw error;
+            }
+        }
+
+        async function saveAdminCredentialsToFirestore() {
+            try {
+                await setDoc(doc(db, "config", "adminCredentials"), appState.adminCredentials);
+                console.log("Admin credentials saved to Firestore");
+            } catch (error) {
+                console.error("Error saving admin credentials:", error);
+                throw error;
+            }
+        }
+
+        async function addPendingPaymentToFirestore(payment) {
+            try {
+                const paymentId = `payment_${Date.now()}`;
+                await setDoc(doc(db, "pendingPayments", paymentId), {
+                    ...payment,
+                    id: paymentId
+                });
+                console.log("Payment added to Firestore");
+                return paymentId;
+            } catch (error) {
+                console.error("Error adding payment:", error);
+                throw error;
+            }
+        }
+
+        async function removePendingPaymentFromFirestore(paymentId) {
+            try {
+                await deleteDoc(doc(db, "pendingPayments", paymentId));
+                console.log("Payment removed from Firestore");
+            } catch (error) {
+                console.error("Error removing payment:", error);
+                throw error;
+            }
+        }
+
+        // --- STATE MANAGEMENT (LOCAL FALLBACK) ---
+        function saveState() {
+            try {
+                localStorage.setItem('wifiVoucherSite', JSON.stringify(appState));
+                // Also try to save to Firestore if available
+                if (db) {
+                    saveSettingsToFirestore().catch(err => console.log("Firestore save failed, using localStorage:", err));
+                }
+                // Apply changes immediately to all views
+                renderUserView();
+            } catch (e) {
+                console.error("Failed to save state:", e);
+                showAdminToast("Error: Could not save settings.");
+            }
+        }
+
+        function loadState() {
+            const storedState = localStorage.getItem('wifiVoucherSite');
+            if (storedState) {
+                appState = JSON.parse(storedState);
+            } else {
+                appState = JSON.parse(JSON.stringify(defaultState));
+                saveState();
+            }
+        }
+
+        // --- VIEW ROUTING ---
+        function showView(viewId) {
+            userView.classList.add('hidden');
+            adminLoginView.classList.add('hidden');
+            adminDashboardView.classList.add('hidden');
+            
+            $(viewId).classList.remove('hidden');
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderUserView() {
+            document.title = appState.siteName;
+            $('user-site-name').textContent = appState.siteName;
+            $('footer-site-name').textContent = appState.siteName;
+            $('footer-year').textContent = new Date().getFullYear();
+            // ensure we don't accidentally use a root-absolute URL (strip leading slash)
+            const logoUrl = appState.logoDataUrl.startsWith('/') ? appState.logoDataUrl.slice(1) : appState.logoDataUrl;
+            const bgUrl = appState.bgDataUrl.startsWith('/') ? appState.bgDataUrl.slice(1) : appState.bgDataUrl;
+            $('user-logo').src = logoUrl;
+            $('admin-logo').src = logoUrl;
+            document.getElementById('favicon').href = logoUrl;
+            $('bg-image-container').style.backgroundImage = `url('${bgUrl}')`;
+            // Apply background to admin login view as well
+            $('admin-login-view').style.backgroundImage = `url('${bgUrl}')`;
+
+            $('whatsapp-link').href = `https://wa.me/${appState.whatsAppNumber.replace('+', '')}`;
+
+            const userNotificationContainer = $('user-notification-container');
+            const userNotificationText = $('user-notification-text');
+            if (appState.notifications && appState.notifications.trim() !== "") {
+                userNotificationText.textContent = appState.notifications;
+                userNotificationContainer.style.display = 'block';
+            } else {
+                userNotificationContainer.style.display = 'none';
+            }
+
+            const plansContainer = $('data-plans-container');
+            plansContainer.innerHTML = '';
+            appState.dataPlans.forEach((plan, index) => {
+                const planCard = document.createElement('div');
+                planCard.className = "bg-gray-800/90 backdrop-blur-sm shadow-xl rounded-2xl p-6 flex flex-col transform hover:scale-[1.02] transition-transform duration-300";
+                planCard.innerHTML = `
+                    <div class="mb-4">
+                        <span class="inline-block bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">${plan.validity}</span>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-white mb-2">${plan.data}</h2>
+                    <p class="text-4xl font-bold text-blue-400 mb-4">₦${plan.price}</p>
+                    <p class="text-gray-300 mb-6 flex-grow">Valid for ${plan.devices} device(s).</p>
+                    <button class="buy-plan-btn w-full px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-lg" data-index="${index}">
+                        Buy Now
+                    </button>
+                `;
+                plansContainer.appendChild(planCard);
+            });
+
+            document.querySelectorAll('.buy-plan-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = e.target.dataset.index;
+                    openPaymentModal(appState.dataPlans[index]);
+                });
+            });
+        }
+
+        function renderAdminDashboard() {
+            siteNameInput.value = appState.siteName;
+            logoPreview.src = appState.logoDataUrl;
+            logoPreview.style.display = 'block';
+            bgPreview.src = appState.bgDataUrl;
+            bgPreview.style.display = 'block';
+            $('admin-dash-logo').src = appState.logoDataUrl;
+            $('admin-dash-site-name').textContent = appState.siteName;
+
+            whatsappNumberInput.value = appState.whatsAppNumber;
+            bankNameInput.value = appState.manualPayment.bankName;
+            accountNumberInput.value = appState.manualPayment.accountNumber;
+            accountNameInput.value = appState.manualPayment.accountName;
+
+            notificationMessageInput.value = appState.notifications;
+
+            newUsernameInput.value = appState.adminCredentials.username;
+            newPasswordInput.value = appState.adminCredentials.password;
+
+            adminPlansList.innerHTML = '';
+            if (appState.dataPlans.length === 0) {
+                adminPlansList.innerHTML = '<p class="text-gray-400">No data plans added yet.</p>';
+                return;
+            }
+
+            appState.dataPlans.forEach((plan, index) => {
+                const planItem = document.createElement('div');
+                planItem.className = 'p-4 bg-gray-900/50 rounded-lg border border-gray-700 flex flex-wrap items-center justify-between gap-4';
+                planItem.innerHTML = `
+                    <div>
+                        <p class="text-lg font-semibold text-gray-200">${plan.data} - ₦${plan.price}</p>
+                        <p class="text-sm text-gray-400">
+                            Validity: ${plan.validity} | Devices: ${plan.devices} | Link: ${plan.paymentLink.substring(0, 30)}...
+                        </p>
+                        <p class="text-sm mt-1">
+                            <span class="admin-only">Upload: ${plan.upload} Mbps</span>
+                            <span class="admin-only ml-2">Download: ${plan.download} Mbps</span>
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0 space-x-2">
+                        <button class="admin-edit-plan-btn p-2 rounded-lg bg-yellow-900/50 text-yellow-300 hover:bg-yellow-800/60" data-index="${index}">Edit</button>
+                        <button class="admin-delete-plan-btn p-2 rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/60" data-index="${index}">Delete</button>
+                    </div>
+                `;
+                adminPlansList.appendChild(planItem);
+            });
+
+            document.querySelectorAll('.admin-edit-plan-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleEditPlan(e.target.dataset.index));
+            });
+            document.querySelectorAll('.admin-delete-plan-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleDeletePlan(e.target.dataset.index));
+            });
+
+            renderPendingPayments();
+            renderVoucherManagement();
+        }
+
+        function renderPendingPayments() {
+            pendingPaymentsList.innerHTML = '';
+            
+            if (appState.pendingPayments.length === 0) {
+                pendingPaymentsList.innerHTML = '<p class="text-gray-400">No pending payments at this time.</p>';
+                return;
+            }
+
+            appState.pendingPayments.forEach((payment, index) => {
+                const paymentItem = document.createElement('div');
+                paymentItem.className = 'p-4 bg-gray-900/50 rounded-lg border border-yellow-700 space-y-3';
+                paymentItem.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <p class="text-lg font-semibold text-yellow-400">₦${payment.amount} - ${payment.planName}</p>
+                            <p class="text-sm text-gray-300 mt-1"><strong>User Phone:</strong> ${payment.phoneNumber}</p>
+                            <p class="text-sm text-gray-300"><strong>Submitted:</strong> ${new Date(payment.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="approve-payment-btn px-4 py-2 rounded-lg bg-green-900/50 text-green-300 hover:bg-green-800/60 font-medium" data-index="${index}">
+                            Approve
+                        </button>
+                        <button class="reject-payment-btn px-4 py-2 rounded-lg bg-red-900/50 text-red-300 hover:bg-red-800/60 font-medium" data-index="${index}">
+                            Reject
+                        </button>
+                    </div>
+                `;
+                pendingPaymentsList.appendChild(paymentItem);
+            });
+
+            document.querySelectorAll('.approve-payment-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleApprovePayment(Number(e.target.dataset.index)));
+            });
+            document.querySelectorAll('.reject-payment-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleRejectPayment(Number(e.target.dataset.index)));
+            });
+        }
+
+        // --- VOUCHER HELPERS ---
+        function renderVoucherManagement() {
+            const planSelect = $('voucher-plan');
+            if (!planSelect) return;
+            planSelect.innerHTML = '';
+            appState.dataPlans.forEach(plan => {
+                const opt = document.createElement('option');
+                opt.value = plan.data;
+                opt.textContent = plan.data;
+                planSelect.appendChild(opt);
+            });
+        }
+
+        function handleVoucherUpload(e) {
+            e.preventDefault();
+            const plan = $('voucher-plan').value;
+            const codes = $('voucher-codes').value.split('\n').map(c => c.trim()).filter(c => c);
+            if (!plan || codes.length === 0) {
+                showAdminToast('Please select plan and enter codes.');
+                return;
+            }
+            codes.forEach(code => {
+                appState.vouchers.push({ code, plan, used: false });
+            });
+            saveState();
+            renderVoucherManagement();
+            showAdminToast(`${codes.length} vouchers added for ${plan}`);
+            $('voucher-codes').value = '';
+        }
+
+        function redeemVoucher(plan) {
+            const voucher = appState.vouchers.find(v => v.plan === plan && !v.used);
+            if (voucher) {
+                voucher.used = true;
+                saveState();
+                return voucher;
+            }
+            return null;
+        }
+
+        // --- MODAL LOGIC ---
+        function openPaymentModal(plan) {
+            currentPaymentPlan = plan;
+            $('modal-plan-data').textContent = plan.data;
+            $('modal-plan-price').textContent = `₦${plan.price}`;
+            $('modal-plan-validity').textContent = `Valid for ${plan.validity}, ${plan.devices} device(s)`;
+            $('paystack-link').href = plan.paymentLink;
+
+            $('manual-bank-name').textContent = appState.manualPayment.bankName;
+            $('manual-account-number').textContent = appState.manualPayment.accountNumber;
+            $('manual-account-name').textContent = appState.manualPayment.accountName;
+            
+            manualPaymentDetails.classList.add('hidden');
+            paymentPhoneNumberInput.value = '';
+            paymentModal.classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.add('hidden');
+        }
+
+        // --- ADMIN DASHBOARD LOGIC ---
+        function showAdminToast(message) {
+            adminToast.textContent = message;
+            adminToast.classList.remove('hidden');
+            setTimeout(() => {
+                adminToast.classList.add('hidden');
+            }, 3000);
+        }
+
+        function handleAdminNav(e) {
+            e.preventDefault();
+            const targetId = e.currentTarget.getAttribute('href').substring(1);
+            
+            adminNavLinks.forEach(link => {
+                link.classList.remove('bg-gray-700', 'font-medium', 'text-gray-300');
+                link.classList.add('text-gray-400');
+            });
+            e.currentTarget.classList.add('bg-gray-700', 'font-medium', 'text-gray-300');
+            e.currentTarget.classList.remove('text-gray-400');
+
+            adminTabContents.forEach(tab => {
+                if (tab.id === `${targetId}-tab`) {
+                    tab.classList.remove('hidden');
+                } else {
+                    tab.classList.add('hidden');
+                }
+            });
+
+            adminTabTitle.textContent = e.currentTarget.textContent;
+        }
+
+        // --- FORM HANDLERS ---
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const username = $('username').value.trim();
+            const password = $('password').value.trim();
+
+            if (username === appState.adminCredentials.username && password === appState.adminCredentials.password) {
+                sessionStorage.setItem('isAdminLoggedIn', 'true');
+                renderAdminDashboard();
+                showView('admin-dashboard-view');
+                loginError.classList.add('hidden');
+                adminLoginForm.reset();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        }
+
+        async function handleAdminLogout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.log("Firebase sign out failed (expected if not using Firebase Auth):", error);
+            }
+            sessionStorage.removeItem('isAdminLoggedIn');
+            showView('user-view');
+        }
+
+        async function handleApprovePayment(index) {
+            const payment = appState.pendingPayments[index];
+            if (payment) {
+                try {
+                    // assign voucher if available for plan
+                    const voucher = redeemVoucher(payment.planName);
+                    if (voucher) {
+                        payment.voucherCode = voucher.code;
+                        // record issued voucher for user
+                        appState.issuedVouchers.push({
+                            phoneNumber: payment.phoneNumber,
+                            plan: payment.planName,
+                            code: voucher.code,
+                            timestamp: new Date().toISOString()
+                        });
+                        showAdminToast(`Payment approved! Voucher: ${voucher.code}`);
+                    } else {
+                        showAdminToast(`Payment approved, but no voucher available for ${payment.planName}`);
+                    }
+
+                    if (db && payment.id) {
+                        // update firestore record with voucher
+                        await updateDoc(doc(db, "pendingPayments", payment.id), {
+                            voucherCode: payment.voucherCode || null,
+                            approved: true
+                        });
+                        await removePendingPaymentFromFirestore(payment.id);
+                    }
+                    appState.pendingPayments.splice(index, 1);
+                    saveState();
+                    renderPendingPayments();
+                } catch (error) {
+                    console.error("Error approving payment:", error);
+                    showAdminToast("Error approving payment");
+                }
+            }
+        }
+
+        async function handleRejectPayment(index) {
+            const payment = appState.pendingPayments[index];
+            if (payment) {
+                try {
+                    if (db && payment.id) {
+                        await removePendingPaymentFromFirestore(payment.id);
+                    }
+                    appState.pendingPayments.splice(index, 1);
+                    saveState();
+                    renderPendingPayments();
+                    showAdminToast(`Payment of ₦${payment.amount} rejected.`);
+                } catch (error) {
+                    console.error("Error rejecting payment:", error);
+                    showAdminToast("Error rejecting payment");
+                }
+            }
+        }
+
+        function handleSettingsSave(e) {
+            e.preventDefault();
+            appState.siteName = siteNameInput.value;
+            saveState();
+            renderUserView();
+            renderAdminDashboard();
+            showAdminToast("Site settings saved!");
+        }
+
+        function handleImageUpload(e, type) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // If Firebase Storage is available, upload and use the hosted URL so it persists across devices
+            if (window.storage) {
+                const path = `images/${type}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+                const sRef = storageRef(window.storage, path);
+                uploadBytes(sRef, file).then(() => {
+                    return getDownloadURL(sRef);
+                }).then((downloadURL) => {
+                    if (type === 'logo') {
+                        appState.logoDataUrl = downloadURL;
+                        logoPreview.src = downloadURL;
+                        logoPreview.style.display = 'block';
+                        document.getElementById('favicon').href = downloadURL;
+                    } else if (type === 'bg') {
+                        appState.bgDataUrl = downloadURL;
+                        bgPreview.src = downloadURL;
+                        bgPreview.style.display = 'block';
+                    }
+                    saveState();
+                    renderUserView();
+                    renderAdminDashboard();
+                }).catch(err => {
+                    console.error('Storage upload failed, falling back to local data URL:', err);
+                    // Fallback to data URL
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        if (type === 'logo') {
+                            appState.logoDataUrl = dataUrl;
+                            logoPreview.src = dataUrl;
+                            logoPreview.style.display = 'block';
+                            document.getElementById('favicon').href = dataUrl;
+                        } else if (type === 'bg') {
+                            appState.bgDataUrl = dataUrl;
+                            bgPreview.src = dataUrl;
+                            bgPreview.style.display = 'block';
+                        }
+                        saveState();
+                        renderUserView();
+                        renderAdminDashboard();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                // No storage available — use data URL (local only)
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const dataUrl = event.target.result;
+                    if (type === 'logo') {
+                        appState.logoDataUrl = dataUrl;
+                        logoPreview.src = dataUrl;
+                        logoPreview.style.display = 'block';
+                        document.getElementById('favicon').href = dataUrl;
+                    } else if (type === 'bg') {
+                        appState.bgDataUrl = dataUrl;
+                        bgPreview.src = dataUrl;
+                        bgPreview.style.display = 'block';
+                    }
+                    saveState();
+                    renderUserView();
+                    renderAdminDashboard();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function handlePlanFormSubmit(e) {
+            e.preventDefault();
+            const plan = {
+                data: planDataInput.value,
+                price: parseFloat(planPriceInput.value),
+                validity: planValidityInput.value,
+                devices: parseInt(planDevicesInput.value),
+                paymentLink: planPaymentLinkInput.value,
+                upload: parseFloat(planUploadInput.value),
+                download: parseFloat(planDownloadInput.value)
+            };
+
+            const index = planIndexInput.value;
+            try {
+                if (index) {
+                    appState.dataPlans[index] = plan;
+                    if (db) {
+                        await savePlanToFirestore(plan, index);
+                    }
+                } else {
+                    appState.dataPlans.push(plan);
+                    if (db) {
+                        await savePlanToFirestore(plan);
+                    }
+                }
+                saveState();
+                renderUserView();
+                renderAdminDashboard();
+                clearPlanForm();
+                showAdminToast(index ? "Plan updated!" : "Plan added!");
+            } catch (error) {
+                console.error("Error saving plan:", error);
+                showAdminToast("Error saving plan");
+            }
+        }
+
+        function clearPlanForm() {
+            planForm.reset();
+            planIndexInput.value = '';
+            planFormTitle.textContent = "Add New Data Plan";
+            savePlanBtn.textContent = "Save Plan";
+        }
+
+        function handleEditPlan(index) {
+            const plan = appState.dataPlans[index];
+            planIndexInput.value = index;
+            planDataInput.value = plan.data;
+            planPriceInput.value = plan.price;
+            planValidityInput.value = plan.validity;
+            planDevicesInput.value = plan.devices;
+            planPaymentLinkInput.value = plan.paymentLink;
+            planUploadInput.value = plan.upload;
+            planDownloadInput.value = plan.download;
+
+            planFormTitle.textContent = "Edit Data Plan";
+            savePlanBtn.textContent = "Update Plan";
+            
+            planForm.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function handleDeletePlan(index) {
+            if (window.confirm("Are you sure you want to delete this plan?")) {
+                try {
+                    if (db) {
+                        await deletePlanFromFirestore(index);
+                    }
+                    appState.dataPlans.splice(index, 1);
+                    saveState();
+                    renderUserView();
+                    renderAdminDashboard();
+                    showAdminToast("Plan deleted!");
+                } catch (error) {
+                    console.error("Error deleting plan:", error);
+                    showAdminToast("Error deleting plan");
+                }
+            }
+        }
+        
+        function handleContactSave(e) {
+            e.preventDefault();
+            appState.whatsAppNumber = whatsappNumberInput.value;
+            saveState();
+            renderUserView();
+            showAdminToast("Contact info saved!");
+        }
+        
+        async function handleManualPaymentSave(e) {
+            e.preventDefault();
+            appState.manualPayment = {
+                bankName: bankNameInput.value,
+                accountNumber: accountNumberInput.value,
+                accountName: accountNameInput.value
+            };
+            try {
+                if (db) {
+                    await saveManualPaymentToFirestore();
+                }
+                saveState();
+                renderUserView();
+                showAdminToast("Manual payment details saved!");
+            } catch (error) {
+                console.error("Error saving manual payment:", error);
+                showAdminToast("Error saving manual payment details");
+            }
+        }
+
+        function handleNotificationSave(e) {
+            e.preventDefault();
+            appState.notifications = notificationMessageInput.value;
+            saveState();
+            renderUserView();
+            showAdminToast("Notification updated!");
+        }
+
+        async function handleSecuritySave(e) {
+            e.preventDefault();
+            appState.adminCredentials.username = newUsernameInput.value;
+            appState.adminCredentials.password = newPasswordInput.value;
+            try {
+                if (db) {
+                    await saveAdminCredentialsToFirestore();
+                }
+                saveState();
+                showAdminToast("Credentials updated! You will be logged out.");
+                setTimeout(() => handleAdminLogout(), 2000);
+            } catch (error) {
+                console.error("Error saving credentials:", error);
+                showAdminToast("Error updating credentials");
+            }
+        }
+
+        async function handleManualPaymentSubmit(e) {
+            e.preventDefault();
+            const phoneNumber = paymentPhoneNumberInput.value.trim();
+
+            if (!currentPaymentPlan) {
+                showAdminToast('Error: No payment plan selected');
+                return;
+            }   
+
+            if (!phoneNumber) {
+                showAdminToast('Please enter your phone number');
+                return;
+            }
+
+            const pendingPayment = {
+                planName: currentPaymentPlan.data,
+                amount: currentPaymentPlan.price,
+                phoneNumber: phoneNumber,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                if (db) {
+                    await addPendingPaymentToFirestore(pendingPayment);
+                }
+                appState.pendingPayments.push(pendingPayment);
+                saveState();
+                manualPaymentSubmitForm.reset();
+                closePaymentModal();
+                showAdminToast('Payment submitted! Admin will verify and approve shortly.');
+            } catch (error) {
+                console.error("Error submitting payment:", error);
+                showAdminToast('Error submitting payment. Please try again.');
+            }
+        }
+
+        // --- USER VOUCHER RETRIEVE ---
+        function renderRetrieveForm() {
+            const planSelect = $('retrieve-plan');
+            if (!planSelect) return;
+            planSelect.innerHTML = '';
+            appState.dataPlans.forEach(plan => {
+                const opt = document.createElement('option');
+                opt.value = plan.data;
+                opt.textContent = plan.data;
+                planSelect.appendChild(opt);
+            });
+        }
+
+        function handleRetrieveSubmit(e) {
+            e.preventDefault();
+            const phone = $('retrieve-phone').value.trim();
+            const plan = $('retrieve-plan').value;
+            const resultEl = $('retrieve-result');
+            resultEl.textContent = '';
+            if (!phone || !plan) {
+                resultEl.textContent = 'Please enter phone and select plan.';
+                return;
+            }
+            const entry = appState.issuedVouchers.find(v => v.phoneNumber === phone && v.plan === plan);
+            if (entry) {
+                resultEl.textContent = `Your voucher code: ${entry.code}`;
+            } else {
+                resultEl.textContent = 'No voucher found. Please contact admin.';
+            }
+        }
+
+
+        // --- INITIALIZATION ---
+        async function init() {
+            // Initialize Firebase/Firestore
+            await initFirestore();
+
+            // Render the initial user view
+            renderUserView();
+
+            // Check for active admin session
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                renderAdminDashboard();
+                showView('admin-dashboard-view');
+            } else {
+                showView('user-view');
+            }
+
+            // --- ATTACH EVENT LISTENERS ---
+            
+            // Modals
+            closeModalBtn.addEventListener('click', closePaymentModal);
+            manualPaymentBtn.addEventListener('click', () => {
+                manualPaymentDetails.classList.toggle('hidden');
+            });
+            manualPaymentSubmitForm.addEventListener('submit', handleManualPaymentSubmit);
+            // voucher retrieval form
+            const retrieveForm = $('voucher-retrieve-form');
+            if (retrieveForm) retrieveForm.addEventListener('submit', handleRetrieveSubmit);
+            renderRetrieveForm();
+
+            paymentModal.addEventListener('click', (e) => {
+                if (e.target === paymentModal) {
+                    closePaymentModal();
+                }
+            });
+
+            // View Changers
+            adminLoginTrigger.addEventListener('click', () => showView('admin-login-view'));
+            adminLoginBtn.addEventListener('click', () => showView('admin-login-view'));
+            backToUserViewBtn.addEventListener('click', () => showView('user-view'));
+            
+            // Admin Login/Logout
+            adminLoginForm.addEventListener('submit', handleAdminLogin);
+            adminLogoutBtn.addEventListener('click', handleAdminLogout);
+
+            // Admin Nav
+            adminNavLinks.forEach(link => link.addEventListener('click', handleAdminNav));
+            // add vouchers tab link listener if exists
+            const vouchersLink = document.getElementById('nav-vouchers');
+            if (vouchersLink) vouchersLink.addEventListener('click', handleAdminNav);
+            
+            // Admin Forms
+            settingsForm.addEventListener('submit', handleSettingsSave);
+            logoUpload.addEventListener('change', (e) => handleImageUpload(e, 'logo'));
+            bgUpload.addEventListener('change', (e) => handleImageUpload(e, 'bg'));
+            
+            planForm.addEventListener('submit', handlePlanFormSubmit);
+            clearPlanFormBtn.addEventListener('click', clearPlanForm);
+            
+            contactForm.addEventListener('submit', handleContactSave);
+            manualPaymentForm.addEventListener('submit', handleManualPaymentSave);
+            notificationForm.addEventListener('submit', handleNotificationSave);
+            securityForm.addEventListener('submit', handleSecuritySave);
+            // voucher form listener
+            const voucherForm = $('voucher-form');
+            if (voucherForm) voucherForm.addEventListener('submit', handleVoucherUpload);
+        }
+
+        // --- START THE APP ---
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
