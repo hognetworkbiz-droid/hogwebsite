@@ -40,7 +40,7 @@ const defaultState = {
       download: 8,
       paymentLink: "https://paystack.shop/pay/2w6t3iv586"
     }
-  ],
+  ,
   manualPayment: {
     bankName: "OPAY BANK",
     accountNumber: "6142233479",
